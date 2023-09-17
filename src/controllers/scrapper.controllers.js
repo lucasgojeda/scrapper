@@ -10,6 +10,7 @@ export const scrapperMLController = async (req, res) => {
   }
   res.status(200).json({
     message: "DONE",
+    total: data.length,
     data,
   });
 };
