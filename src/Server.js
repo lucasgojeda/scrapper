@@ -7,7 +7,7 @@ import chalk from "chalk";
 import logger from "morgan";
 
 /** Database */
-// const { dbConnection } = require('../database/config')
+import { dbConnect } from "./config/mongo.js";
 
 /** Routes */
 import { scrapperRouter } from "./routes/scrapper.routes.js.js";
@@ -32,7 +32,7 @@ class Server {
   }
 
   async conectarDB() {
-    // await dbConnection()
+    await dbConnect();
   }
 
   middlewares() {
