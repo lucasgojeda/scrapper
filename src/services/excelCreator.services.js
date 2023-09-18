@@ -28,7 +28,7 @@ worksheet.columns = [
   { header: "Descuentos", key: "discounts" },
 ];
 
-export const createExcelFile = (data, titleFile) => {
+export const createExcelFile = (data, titleFile, report) => {
   // Agregar los datos a la hoja de trabajo
   data.forEach((item) => {
     const formattedItem = {
@@ -48,11 +48,11 @@ export const createExcelFile = (data, titleFile) => {
     worksheet.addRow(formattedItem);
   });
 
-  workbook.xlsx
+  return workbook.xlsx
     .write(stream)
     .then(() => {
       s3.upload({
-        Key: `${titleFile}.xlsx`,
+        Key: `${report._id}.xlsx`,
         Bucket: "scrpr-bucket",
         Body: stream,
         ContentType:
@@ -61,19 +61,24 @@ export const createExcelFile = (data, titleFile) => {
     })
     .catch(function (e) {
       console.log(e.message);
+
+      return null;
     })
     .then(
       function () {
         const params = {
           Bucket: "scrpr-bucket",
-          Key: `${titleFile}.xlsx`,
-          Expires: null,
+          Key: `${report._id}.xlsx`,
+          Expires: 31536000,
           ResponseContentDisposition: `attachment; filename="${titleFile}.xlsx"`,
         };
 
-        console.log(s3.getSignedUrl("getObject", params));
+        const link = s3.getSignedUrl("getObject", params);
+
         console.log("Archivo Excel guardado exitosamente");
         console.log("==========================DONE=========================");
+
+        return link;
       },
       function () {
         console.log("Not fired due to the catch");

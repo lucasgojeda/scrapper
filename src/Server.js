@@ -10,10 +10,12 @@ import logger from "morgan";
 import { dbConnect } from "./config/mongo.js";
 
 /** Routes */
-import { scrapperRouter } from "./routes/scrapper.routes.js.js";
+import { authRouter } from "./routes/auth.routes.js";
+import { scrapperRouter } from "./routes/scrapper.routes.js";
 
 /** Utils */
 import { log } from "./utils/logger.js";
+import { reportRouter } from "./routes/report.routes.js";
 
 class Server {
   constructor() {
@@ -21,6 +23,8 @@ class Server {
     this.port = process.env.PORT;
 
     this.paths = {
+      auth: "/api/auth",
+      reports: "/api/reports",
       scrapper: "/api/scrapper",
     };
 
@@ -48,6 +52,8 @@ class Server {
   }
 
   routes() {
+    this.app.use(this.paths.auth, authRouter);
+    this.app.use(this.paths.reports, reportRouter);
     this.app.use(this.paths.scrapper, scrapperRouter);
   }
   listen() {

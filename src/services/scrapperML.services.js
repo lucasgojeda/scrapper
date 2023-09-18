@@ -147,11 +147,6 @@ export const scrapperMLService = async (name) => {
     result = [...result, ...data];
   }
 
-  console.log(result);
-
-  /** Create excel file */
-  createExcelFile(result, name);
-
   console.log("....");
   console.log(
     `${chalk.white("==========================")} ${chalk.green(

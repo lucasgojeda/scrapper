@@ -1,5 +1,5 @@
 /** Libraries */
-const { Schema, model } = require("mongoose");
+import { Schema, model } from "mongoose";
 
 const reportSchema = Schema({
   name: {
@@ -9,7 +9,6 @@ const reportSchema = Schema({
   url: {
     type: String,
     required: true,
-    unique: true,
   },
   productsQuantity: {
     type: Number,
@@ -31,4 +30,5 @@ reportSchema.methods.toJSON = function () {
   return report;
 };
 
-module.exports = model("Report", reportSchema);
+const Report = model("Report", reportSchema);
+export default Report;
