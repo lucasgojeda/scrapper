@@ -41,7 +41,7 @@ export const scrapperMLService = async (name) => {
 
   let result = [];
 
-  for (let i = 1; i <= 2; i++) {
+  for (let i = 1; i <= 1; i++) {
     const newUrlToSearch = `https://listado.mercadolibre.com.ar/${name
       .trim()
       .replace(" ", "-")}_Desde_${1 + i * 50}_NoIndex_True`;

@@ -3,7 +3,6 @@ import { createExcelFile } from "../services/excelCreator.services.js";
 import {
   createReportService,
   deleteReportService,
-  updateReportService,
 } from "../services/report.services.js";
 import { scrapperMLService } from "../services/scrapperML.services.js";
 
@@ -32,22 +31,15 @@ export const scrapperMLController = async (req, res) => {
     await deleteReportService(report._id);
     handleError(res, "Report Creation failed", {}, 403);
     return;
-  } else {
-    await updateReportService(report._id, url).catch(async () => {
-      await deleteReportService(report._id);
-    });
   }
 
   const reportFinished = {
     _id: report._id,
     name: report.name,
-    url: url,
     productsQuantity: report.productsQuantity,
     user: report.user,
     date: report.date,
   };
-
-  console.log("reportFinished: ", reportFinished);
 
   res.status(200).json({
     report: reportFinished,
