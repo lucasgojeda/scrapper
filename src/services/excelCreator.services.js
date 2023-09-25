@@ -1,9 +1,6 @@
 /** Libraries */
 import ExcelJS from "exceljs";
 import Stream from "stream";
-import AWS from "aws-sdk";
-
-const s3 = new AWS.S3();
 
 const stream = new Stream.PassThrough();
 
@@ -26,9 +23,16 @@ worksheet.columns = [
   { header: "Precio en cuotas", key: "priceInInstallments" },
   { header: "Más vendido", key: "bestSelled" },
   { header: "Descuentos", key: "discounts" },
+
+  { header: "Ventas de los ultimo 60 dias (más de)", key: "last60DaysSels" },
+  { header: "Productos disponibles", key: "productsAvailable" },
+  { header: "Descripcion", key: "productDescription" },
+  { header: "Pagina del vendedor", key: "sellerWebsite" },
+  { header: "Productos vendidos", key: "productsSelled" },
+  { header: "Tabla de detalles", key: "descriptionTable" },
 ];
 
-export const createExcelFile = (data, titleFile, report) => {
+export const createExcelFile = async (data, titleFile) => {
   // Agregar los datos a la hoja de trabajo
   data.forEach((item) => {
     const formattedItem = {
@@ -43,45 +47,22 @@ export const createExcelFile = (data, titleFile, report) => {
       priceInInstallments: item.priceInInstallments,
       bestSelled: item.bestSelled,
       discounts: item.discounts,
+      last60DaysSels: item.last60DaysSels,
+      productsAvailable: item.productsAvailable,
+      productDescription: item.productDescription,
+      sellerWebsite: item.sellerWebsite,
+      productsSelled: item.productsSelled,
+      descriptionTable: item.descriptionTable,
     };
 
     worksheet.addRow(formattedItem);
   });
 
-  return workbook.xlsx
-    .write(stream)
-    .then(() => {
-      s3.upload({
-        Key: `${report._id}.xlsx`,
-        Bucket: "scrpr-bucket",
-        Body: stream,
-        ContentType:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      }).promise();
-    })
-    .catch(function (e) {
-      console.log(e.message);
-
-      return null;
-    })
-    .then(
-      function () {
-        const params = {
-          Bucket: "scrpr-bucket",
-          Key: `${report._id}.xlsx`,
-          Expires: 31536000,
-          ResponseContentDisposition: `attachment; filename="${titleFile}.xlsx"`,
-        };
-
-        const link = s3.getSignedUrl("getObject", params);
-
-        console.log("Archivo Excel guardado exitosamente");
-        console.log("==========================DONE=========================");
-
-        return link;
-      },
-      function () {
-        console.log("Not fired due to the catch");
-      }
-    );
+  try {
+    await workbook.xlsx.writeFile(`./csv/${titleFile}.xlsx`);
+    console.log("Archivo Excel guardado exitosamente");
+    console.log("==========================DONE=========================");
+  } catch (error) {
+    console.error("Error al guardar el archivo Excel:", error);
+  }
 };

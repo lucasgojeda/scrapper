@@ -11,8 +11,7 @@ export const scrapperMLService = async (name) => {
   );
 
   const browser = await chromium.launch({
-    slowMo: 200,
-    headless: false,
+    // slowMo: 200,
     // headless: "old",
   });
 
@@ -41,7 +40,8 @@ export const scrapperMLService = async (name) => {
 
   let result = [];
 
-  for (let i = 1; i <= 2; i++) {
+  const lastCount = process.env.TEST_MODE === "ON" ? 1 : LastPage;
+  for (let i = 1; i <= lastCount; i++) {
     const newUrlToSearch = `https://listado.mercadolibre.com.ar/${name
       .trim()
       .replace(" ", "-")}_Desde_${1 + i * 50}_NoIndex_True`;
@@ -150,11 +150,131 @@ export const scrapperMLService = async (name) => {
   console.log("....");
   console.log(
     `${chalk.white("==========================")} ${chalk.green(
-      "DONE"
+      "1/2 DONE"
     )} ${chalk.white("==========================")}`
   );
 
   await browser.close();
 
   return result || null;
+};
+
+export const scrapperProductPageMLService = async (products) => {
+  const browser = await chromium.launch({
+    // slowMo: 200,
+    // headless: "old",
+  });
+  try {
+    const page = await browser.newPage();
+
+    let result = [];
+
+    const lastCount = process.env.TEST_MODE === "ON" ? 1 : products.length;
+    for (let i = 0; i <= lastCount; i++) {
+      const urlToSearch = products[i]?.Link;
+
+      if (urlToSearch) {
+        await page.goto(urlToSearch, { waitUntil: "domcontentloaded" });
+
+        console.log(
+          chalk.gray(
+            `Page ${chalk.white(i)} of ${chalk.white(products.length)}`
+          )
+        );
+
+        /** quantity of products selled in the last 60 days */
+        const last60DaysSelsElement = await page.$(
+          ".ui-pdp-seller__sales-description"
+        );
+        let last60DaysSels = await last60DaysSelsElement.textContent();
+
+        if (last60DaysSels.split("+")[1].includes("m")) {
+          last60DaysSels =
+            Number(last60DaysSels.split("+")[1].split("m")[0]) * 1000;
+        } else {
+          last60DaysSels = Number(last60DaysSels.split("+")[1]);
+        }
+
+        /** quantity of products available */
+        const productsAvailableElement = await page.$(
+          ".ui-pdp-buybox__quantity__available"
+        );
+        let productsAvailable = await productsAvailableElement?.textContent();
+        if (productsAvailable) {
+          productsAvailable = Number(
+            productsAvailable.split("(")[1].split(" ")[0]
+          );
+        }
+
+        /** quantity of products available */
+        const productsSelledElement = await page.$(".ui-pdp-subtitle");
+        let productsSelled = await productsSelledElement?.textContent();
+        if (productsSelled) {
+          productsSelled = productsSelled
+            .split("|")[1]
+            .split(" ")[2]
+            .split("+")[1];
+          if (productsSelled?.includes("m")) {
+            productsSelled = Number(productsSelled.split("m")[0]) * 1000;
+          }
+        }
+
+        /** Description */
+        const productDescriptionElement = await page.$(
+          ".ui-pdp-description__content"
+        );
+        let productDescription = await productDescriptionElement?.textContent();
+
+        /** Description row tables */
+        let descriptionTable = [];
+        const productRowDescriptionElement = await page.$$(
+          ".andes-table__row.ui-vpp-striped-specs__row"
+        );
+
+        for (const row of productRowDescriptionElement) {
+          const titleElement = await row.$("th");
+          const title = await titleElement?.textContent();
+
+          const contentElement = await row.$("td");
+          const content = await contentElement?.textContent();
+
+          descriptionTable = [...descriptionTable, { title, content }];
+        }
+
+        /** seller website */
+        const sellerWebsiteElement = await page.$(
+          "a.ui-pdp-media__action.ui-box-component__action"
+        );
+        let sellerWebsite = await sellerWebsiteElement?.getAttribute("href");
+
+        /** Save data into array */
+        result.push({
+          ...products[i],
+          last60DaysSels,
+          productsAvailable: productsAvailable || false,
+          productDescription: productDescription || false,
+          sellerWebsite: sellerWebsite || false,
+          productsSelled: productsSelled || false,
+          descriptionTable:
+            descriptionTable.length > 1 ? descriptionTable : false,
+        });
+      } else {
+        console.log("##################################");
+        console.log(products[i]);
+        console.log("##################################");
+      }
+    }
+
+    return result || null;
+  } catch (error) {
+    console.log(error);
+    return null;
+  } finally {
+    console.log(
+      `${chalk.white("==========================")} ${chalk.green(
+        "2/2 DONE"
+      )} ${chalk.white("==========================")}`
+    );
+    await browser.close();
+  }
 };
